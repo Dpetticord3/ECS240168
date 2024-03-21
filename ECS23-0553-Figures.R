@@ -230,6 +230,26 @@ ggplot(df, aes(Loss, BGB)) +
   stat_poly_eq(mapping = use_label(c("R2", "P")), p.digits = 2) +
   facet_wrap(~ Species) +theme_bw() 
 
+VOlumemodel = lm(Volume~Species, data = doi)
+ANOVA = aov(VOlumemodel)
+summary(VOlumemodel)
+summary(ANOVA)
+TUKEY = TukeyHSD(x=ANOVA, 'Species', conf.level = 0.95)
+Tk <- group_by(doi, Species) %>%
+  summarise(mean=mean(Volume), quant = quantile(Volume, probs = 0.75)) %>%
+  arrange(desc(mean))
+cld <- multcompLetters4(ANOVA, TUKEY)
+cld <- as.data.frame.list(cld$Species)
+Tk$cld = cld$Letters
+my_comparisons <- list(  c("P. notatum", "C. nlemfuensis"), c("P. notatum", "H. altissima"), c("C. nlemfuensis", "H. altissima"))
+VolLoss = ggplot(doi, aes(Species, Volume, fill = Species)) + 
+  geom_boxplot(alpha = 0.4)+
+  labs(x="Species", y="Total leachate loss (L)",  title = "Total Volume of Leachate Lost Beneath Candidate Species") +Theme_Publication()+
+  geom_text(data = Tk, aes(x = Species, y = quant, label = cld), size = 5, vjust=-1, hjust =-1)+
+  scale_fill_manual(values = c("P. notatum" = "#F8766D","H. altissima" ="#00BA38","C. nlemfuensis" = "#619CFF", "C" ="purple"))
+
+ggpar(VolLoss, font.x = 16, font.y = 16, font.ytickslab = 16, font.xtickslab = c(16, "italic"))
+
 
 #Belowground Biomass
 
