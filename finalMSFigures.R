@@ -55,6 +55,9 @@ scale_colour_Publication <- function(...){
 masterdata <- read.csv("masterdf.csv")
 df = masterdata
 df$Species <- factor(df$Species, levels=c( "P. notatum", "H. altissima", "C. nlemfuensis"))
+
+#we must log transform certain columns to conduct the statistical analysis,
+#but we will plot the back-transformed means for ease of interpretation
 df$logAGB = log10(df$AGB)
 df$logBGB = log10(df$BGB)
 df$logStock = log10(df$Total_Stock)
@@ -99,13 +102,21 @@ cld <- multcompLetters4(ANOVA, TUKEY)
 cld <- as.data.frame.list(cld$Species)
 Tk$cld = cld$Letters
 
+summ <- df %>% 
+  group_by(Species) %>% 
+  summarize(mean = mean(AGB), median = median(AGB), sd = sd(AGB))
+
+means <- aggregate(AGB ~  Species, df, mean)
 my_comparisons <- list(  c("P. notatum", "C. nlemfuensis"), c("P. notatum", "H. altissima"))
-AGB = ggplot(df, aes(Species, logAGB, fill = Species)) + 
+AGB = ggplot(df, aes(Species, AGB, fill = Species)) + 
   geom_boxplot(alpha = 0.4)+
-  labs(x="Species", y="Aboveground Biomass (mg)", subtitle = "Biomass data log transformed to meet assumptions of normality", caption = "pwc: Tukey's HSD", title = "Aboveground Biomass Varies Among Species") +
+  labs(x="Species", y="Aboveground Biomass (g)", caption = "pwc: Tukey's HSD", title = "Aboveground Biomass Varies Among Species") +
   stat_compare_means(label = 'p.signif', comparisons = my_comparisons)+ # Add pairwise comparisons p-value +
   theme(panel.grid.major = element_blank(), plot.subtitle = element_text(face = 'italic'), panel.grid.minor = element_blank())  + Theme_Publication() +
-  geom_text(data = Tk, aes(x = Species, y = quant, label = cld), size = 5, vjust=-1, hjust =-1)
+  geom_text(data = Tk, aes(x = Species, y = quant, label = cld), size = 5, vjust=-1, hjust =-1)+
+  stat_summary(fun=mean, colour="black", geom="point", 
+               shape=18, size=3, show.legend=FALSE) + 
+  geom_text(data = means, aes(label = AGB, y = AGB + 8))
 ggpar(AGB, font.x = 16, font.y = 16, font.ytickslab = 16, font.xtickslab = c(16, "italic"))
 
 
@@ -197,6 +208,8 @@ TotalStock = ggplot(df, aes(Species, logStock, fill = Species)) +
 ggpar(TotalStock, font.x = 16, font.y = 16, font.ytickslab = 16, font.xtickslab = c(16, "italic"))
 
 #Aboveground Stock
+means <- aggregate(Above_Total ~  Species, df, mean)
+
 AboveStockModel = lm(Above_Total~Species, data = df)
 ANOVA = aov(AboveStockModel)
 TUKEY = TukeyHSD(x=ANOVA, 'Species', conf.level = 0.95)
@@ -212,7 +225,10 @@ AboveStock = ggplot(df, aes(Species, Above_Total, fill = Species)) +
   labs(x="Species", y="P Stock in Aboveground Plant (mg)", caption = "pwc: Tukey's HSD", title = "Average Phosphorus Removed In Vegetation 'Harvest'") +
   stat_compare_means(label = 'p.signif', comparisons = my_comparisons)+ # Add pairwise comparisons p-value +
   theme(panel.grid.major = element_blank(), plot.subtitle = element_text(face = 'italic'), panel.grid.minor = element_blank())  + Theme_Publication() +
-  geom_text(data = Tk, aes(x = Species, y = quant, label = cld), size = 5, vjust=-1, hjust =-1)
+  geom_text(data = Tk, aes(x = Species, y = quant, label = cld), size = 5, vjust=-1, hjust =-1)+
+  stat_summary(fun=mean, colour="black", geom="point", 
+               shape=18, size=3, show.legend=FALSE) + 
+  geom_text(data = means, aes(label = round(Above_Total, 1), y = Above_Total + 15))
   
 ggpar(AboveStock, font.x = 16, font.y = 16, font.ytickslab = 16, font.xtickslab = c(16, "italic"))
 
@@ -304,6 +320,10 @@ ggpar(Loss, font.x = 16, font.y = 16, font.ytickslab = 16, font.xtickslab = c(16
 #Average Leachate Load PPM
 VOlumemodel = lm(logAveragePPM~Species, data = df)
 ANOVA = aov(VOlumemodel)
+summ <- df %>% 
+  group_by(Species) %>% 
+  summarize(mean = mean(AveragePPM), median = median(AveragePPM), sd = sd(AveragePPM))
+
 TUKEY = TukeyHSD(x=ANOVA, 'Species', conf.level = 0.95)
 Tk <- group_by(df, Species) %>%
   summarise(mean=mean(logAveragePPM), quant = quantile(logAveragePPM, probs = 0.75)) %>%
@@ -312,6 +332,7 @@ cld <- multcompLetters4(ANOVA, TUKEY)
 cld <- as.data.frame.list(cld$Species)
 Tk$cld = cld$Letters
 my_comparisons <- list(  c("P. notatum", "C. nlemfuensis"), c("P. notatum", "H. altissima"), c("C. nlemfuensis", "H. altissima"))
+
 Loss = ggplot(df, aes(Species, logAveragePPM, fill = Species)) + 
   geom_boxplot(alpha = 0.4)+
   labs(x="Species", y="Average Leachate Content (mg)", subtitle = "Leachate data log transformed to meet assumptions of normality", caption = "pwc: Tukey's HSD", title = "Average P-Content in Leachate") +
