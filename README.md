@@ -1,5 +1,4 @@
-# EcologicalApplications_MesocosmManuscriptDataAndFigures
-
+# Ecosphere:  ECS24-0168 - Planted species influences soil phosphorus losses in a historically fertilized pasture system: a mesocosm study
 #This repository contains a master dataframe including all of the final processed data from the Archbold Biological Station FDACS phosphorus shadehouse project, 
 carried out at Buck Island Ranch in 2020. 
 
